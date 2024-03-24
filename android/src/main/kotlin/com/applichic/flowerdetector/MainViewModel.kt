@@ -17,6 +17,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState
 
+    private val modelManager = ModelManager(application)
+
     fun loadImages() {
         val context = getApplication<Application>().applicationContext
 

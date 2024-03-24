@@ -23,6 +23,8 @@ kotlin {
             implementation(compose.material)
             implementation(compose.ui)
             implementation(compose.material3)
+//            implementation(libs.pytorch)
+//            implementation(libs.pytorch.torchvision)
         }
     }
 }
