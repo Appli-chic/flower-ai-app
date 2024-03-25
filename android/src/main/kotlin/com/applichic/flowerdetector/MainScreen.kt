@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
@@ -40,24 +39,26 @@ import coil.compose.AsyncImage
 @Composable
 fun MainScreen(viewModel: MainViewModel) {
     val uiState by viewModel.uiState.collectAsState()
-    MainScreen(uiState, viewModel::onRoseFilterChanged)
+    MainScreen(uiState, viewModel::onRoseFilterChanged, viewModel::switchModelMode)
 }
 
 @Composable
 fun MainScreen(
     uiState: UiState,
     onRoseFilterChanged: () -> Unit,
+    switchModelMode: () -> Unit,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
+    val modelModeText = if (uiState.isModelModeOnline) "Passer en local" else "Passer par internet"
 
     Scaffold(
         topBar = {
             LargeTopAppBar(
-                title = { Text("Flower Detector") },
+                title = { Text("Détecteur de fleur") },
                 scrollBehavior = scrollBehavior,
                 actions = {
-                    FilledTonalButton(onClick = {  }) {
-                        Text("Offline")
+                    FilledTonalButton(onClick = switchModelMode) {
+                        Text(modelModeText)
                     }
                 }
             )
@@ -112,6 +113,6 @@ fun MainScreen(
 @Composable
 fun MainScreenPreview() {
     MaterialTheme {
-        MainScreen(uiState = UiState(images = emptyList()), {})
+        MainScreen(uiState = UiState(images = emptyList()), {}, {})
     }
 }

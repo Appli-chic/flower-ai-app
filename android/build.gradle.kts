@@ -26,6 +26,8 @@ kotlin {
             implementation(libs.pytorch)
             implementation(libs.pytorch.torchvision)
             implementation(libs.coil)
+            implementation(libs.retrofit)
+            implementation(libs.retrofit.gson)
         }
     }
 }

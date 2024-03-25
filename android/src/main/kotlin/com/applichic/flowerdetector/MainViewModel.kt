@@ -7,11 +7,17 @@ import android.net.Uri
 import android.provider.MediaStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.applichic.flowerdetector.network.NetworkService
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
+import java.io.ByteArrayOutputStream
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _uiState = MutableStateFlow(UiState())
@@ -65,11 +71,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                             BitmapFactory.decodeStream(context.contentResolver.openInputStream(imageUri))
                         val fixedSizeBitmap = Bitmap.createScaledBitmap(bitmap, 192, 192, true)
 
-                        val score = modelManager.predict(fixedSizeBitmap)
-
-                        if (score == 2) {
-                            _uiState.value =
-                                _uiState.value.copy(selectedImages = _uiState.value.selectedImages + imageUrl)
+                        if (_uiState.value.isModelModeOnline) {
+                            calculateScoresFromApi(fixedSizeBitmap, imageUrl)
+                        } else {
+                            calculateScoresLocally(fixedSizeBitmap, imageUrl)
                         }
                     }
                 }
@@ -78,10 +83,45 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             _uiState.value = _uiState.value.copy(selectedImages = emptyList())
         }
     }
+
+    fun switchModelMode() {
+        _uiState.value = _uiState.value.copy(isModelModeOnline = !_uiState.value.isModelModeOnline)
+    }
+
+    private fun calculateScoresLocally(bitmap: Bitmap, imageUrl: String) {
+        val score = modelManager.predict(bitmap)
+
+        if (score == 2) {
+            _uiState.value =
+                _uiState.value.copy(selectedImages = _uiState.value.selectedImages + imageUrl)
+        }
+    }
+
+    private suspend fun calculateScoresFromApi(bitmap: Bitmap, imageUrl: String) {
+        try {
+            val response = NetworkService.apiService.getPrediction(createPartFromBitmap(bitmap))
+
+            if (response.body()?.prediction == "rose") {
+                _uiState.value =
+                    _uiState.value.copy(selectedImages = _uiState.value.selectedImages + imageUrl)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    private fun createPartFromBitmap(bitmap: Bitmap): RequestBody {
+        val bos = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, bos)
+        val bitmapData = bos.toByteArray()
+
+        return bitmapData.toRequestBody("image/jpeg".toMediaTypeOrNull())
+    }
 }
 
 data class UiState(
     val images: List<String> = emptyList(),
     val selectedImages: List<String> = emptyList(),
     val isRoseFilterSelected: Boolean = false,
+    val isModelModeOnline: Boolean = false,
 )

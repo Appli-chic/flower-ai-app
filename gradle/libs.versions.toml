@@ -5,20 +5,21 @@ android-minSdk = "24"
 android-targetSdk = "34"
 androidx-activityCompose = "1.8.2"
 compose = "1.6.3"
-compose-material3 = "1.2.1"
 compose-plugin = "1.6.0"
 kotlin = "1.9.22"
 pytorch = "2.1.0"
 coil = "2.6.0"
+retrofit = "2.9.0"
 
 [libraries]
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx-activityCompose" }
 compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "compose" }
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose" }
-compose-material3 = { module = "androidx.compose.material3:material3", version.ref = "compose-material3" }
 pytorch = { module = "org.pytorch:pytorch_android_lite", version.ref = "pytorch" }
 pytorch-torchvision = { module = "org.pytorch:pytorch_android_torchvision_lite", version.ref = "pytorch" }
 coil = { module = "io.coil-kt:coil-compose", version.ref = "coil" }
+retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
+retrofit-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
