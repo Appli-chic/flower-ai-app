@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LargeTopAppBar
 import androidx.compose.material3.MaterialTheme
@@ -39,13 +41,13 @@ import coil.compose.AsyncImage
 @Composable
 fun MainScreen(viewModel: MainViewModel) {
     val uiState by viewModel.uiState.collectAsState()
-    MainScreen(uiState, viewModel::onRoseFilterChanged, viewModel::switchModelMode)
+    MainScreen(uiState, viewModel::onFlowerFilterChanged, viewModel::switchModelMode)
 }
 
 @Composable
 fun MainScreen(
     uiState: UiState,
-    onRoseFilterChanged: () -> Unit,
+    onFlowerFilterChanged: (newFilter: FlowerFilter) -> Unit,
     switchModelMode: () -> Unit,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
@@ -67,12 +69,27 @@ fun MainScreen(
     ) { paddingValues ->
         Column(modifier = Modifier.padding(paddingValues)) {
 
-            FilterChip(
-                label = { Text("Roses") },
-                selected = uiState.isRoseFilterSelected,
-                onClick = onRoseFilterChanged,
-                modifier = Modifier.padding(8.dp),
-            )
+            Row {
+                FilterChip(
+                    label = { Text("Roses") },
+                    selected = uiState.flowerFilter == FlowerFilter.ROSE,
+                    onClick = { onFlowerFilterChanged(FlowerFilter.ROSE) },
+                    colors = FilterChipDefaults.filterChipColors().copy(
+                        selectedContainerColor = Color.Red.copy(alpha = 0.5f),
+                    ),
+                    modifier = Modifier.padding(8.dp),
+                )
+
+                FilterChip(
+                    label = { Text("Tournesols") },
+                    selected = uiState.flowerFilter == FlowerFilter.TOURNESOL,
+                    onClick = { onFlowerFilterChanged(FlowerFilter.TOURNESOL) },
+                    colors = FilterChipDefaults.filterChipColors().copy(
+                        selectedContainerColor = Color.Yellow.copy(alpha = 0.5f),
+                    ),
+                    modifier = Modifier.padding(8.dp),
+                )
+            }
 
             LazyVerticalGrid(
                 columns = GridCells.Fixed(3),

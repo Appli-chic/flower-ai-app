@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
@@ -58,55 +57,63 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun onRoseFilterChanged() {
-        val context = getApplication<Application>().applicationContext
-        _uiState.value = _uiState.value.copy(isRoseFilterSelected = !_uiState.value.isRoseFilterSelected)
-
-        if (_uiState.value.isRoseFilterSelected) {
-            viewModelScope.launch {
-                withContext(Dispatchers.IO) {
-                    for (imageUrl in _uiState.value.images) {
-                        val imageUri = Uri.parse(imageUrl)
-                        val bitmap =
-                            BitmapFactory.decodeStream(context.contentResolver.openInputStream(imageUri))
-                        val fixedSizeBitmap = Bitmap.createScaledBitmap(bitmap, 192, 192, true)
-
-                        if (_uiState.value.isModelModeOnline) {
-                            calculateScoresFromApi(fixedSizeBitmap, imageUrl)
-                        } else {
-                            calculateScoresLocally(fixedSizeBitmap, imageUrl)
-                        }
-                    }
-                }
-            }
-        } else {
-            _uiState.value = _uiState.value.copy(selectedImages = emptyList())
-        }
-    }
-
     fun switchModelMode() {
         _uiState.value = _uiState.value.copy(isModelModeOnline = !_uiState.value.isModelModeOnline)
     }
 
+    fun onFlowerFilterChanged(filter: FlowerFilter) {
+        val newFilter = if (filter == _uiState.value.flowerFilter) FlowerFilter.NONE else filter
+        _uiState.value = _uiState.value.copy(selectedImages = emptyList(), flowerFilter = newFilter)
+
+        if (_uiState.value.flowerFilter == FlowerFilter.NONE) return
+
+        calculateScores()
+    }
+
+    private fun calculateScores() {
+        val context = getApplication<Application>().applicationContext
+
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                for (imageUrl in _uiState.value.images) {
+                    val imageUri = Uri.parse(imageUrl)
+                    val bitmap =
+                        BitmapFactory.decodeStream(context.contentResolver.openInputStream(imageUri))
+                    val fixedSizeBitmap = Bitmap.createScaledBitmap(bitmap, 192, 192, true)
+
+                    if (_uiState.value.isModelModeOnline) {
+                        calculateScoresFromApi(fixedSizeBitmap, imageUrl)
+                    } else {
+                        calculateScoresLocally(fixedSizeBitmap, imageUrl)
+                    }
+                }
+            }
+        }
+    }
+
     private fun calculateScoresLocally(bitmap: Bitmap, imageUrl: String) {
         val score = modelManager.predict(bitmap)
-
-        if (score == 2) {
-            _uiState.value =
-                _uiState.value.copy(selectedImages = _uiState.value.selectedImages + imageUrl)
-        }
+        selectImageFromScore(score, imageUrl)
     }
 
     private suspend fun calculateScoresFromApi(bitmap: Bitmap, imageUrl: String) {
         try {
             val response = NetworkService.apiService.getPrediction(createPartFromBitmap(bitmap))
-
-            if (response.body()?.prediction == "rose") {
-                _uiState.value =
-                    _uiState.value.copy(selectedImages = _uiState.value.selectedImages + imageUrl)
-            }
+            selectImageFromScore(response.body()?.prediction, imageUrl)
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+    }
+
+    private fun selectImageFromScore(prediction: String?, imageUrl: String) {
+        val currentFilter = _uiState.value.flowerFilter
+
+        if (prediction == "rose" && currentFilter == FlowerFilter.ROSE) {
+            _uiState.value =
+                _uiState.value.copy(selectedImages = _uiState.value.selectedImages + imageUrl)
+        } else if (prediction == "tournesol" && currentFilter == FlowerFilter.TOURNESOL) {
+            _uiState.value =
+                _uiState.value.copy(selectedImages = _uiState.value.selectedImages + imageUrl)
         }
     }
 
@@ -122,6 +129,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 data class UiState(
     val images: List<String> = emptyList(),
     val selectedImages: List<String> = emptyList(),
-    val isRoseFilterSelected: Boolean = false,
+    val flowerFilter: FlowerFilter = FlowerFilter.NONE,
     val isModelModeOnline: Boolean = false,
 )
+
+enum class FlowerFilter {
+    NONE,
+    MARGUERITE,
+    PISSENLIT,
+    ROSE,
+    TOURNESOL,
+    TULIPE,
+}

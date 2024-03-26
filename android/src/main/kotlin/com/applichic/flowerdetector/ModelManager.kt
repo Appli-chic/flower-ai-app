@@ -15,7 +15,7 @@ class ModelManager(context: Context) {
 
     private val module = LiteModuleLoader.load(assetFilePath(context, "model.ptl"))
 
-    fun predict(image: Bitmap): Int {
+    fun predict(image: Bitmap): String {
         val input = TensorImageUtils.bitmapToFloat32Tensor(
             image,
             TensorImageUtils.TORCHVISION_NORM_MEAN_RGB,
@@ -24,7 +24,16 @@ class ModelManager(context: Context) {
 
         val outputTensor = module.forward(IValue.from(input)).toTensor()
         val scores = outputTensor.dataAsFloatArray
-        return scores.indices.maxBy { scores[it] }
+        val bestScore = scores.indices.maxBy { scores[it] }
+
+        return when (bestScore) {
+            0 -> "marguerite"
+            1 -> "pissenlit"
+            2 -> "rose"
+            3 -> "tournesol"
+            4 -> "tulipe"
+            else -> "unknown"
+        }
     }
 
     private fun assetFilePath(context: Context, assetName: String): String? {
